@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <ncurses.h>
+#include <curses.h>
+#include <unistd.h>
 
 #define elif else if
 

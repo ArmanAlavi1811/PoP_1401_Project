@@ -1,7 +1,7 @@
 #include "project.h"
 
 typedef struct text_box{
-    char *lable;
+    char lable[11];
     int lable_len;
     int hegiht;
     int width;
@@ -15,7 +15,7 @@ typedef struct text_box{
 typedef struct form{
     char name[11];
     int num_of_boxes;
-    Text_box **t_boxes;
+    Text_box t_boxes[10];
 
 } Form;
 
@@ -187,9 +187,9 @@ void box_creator(Form *my_form){
     keypad(stdscr, TRUE);
     refresh();
 
-    char *eraser = malloc((lable_len + 1) * sizeof(char));
+    char *eraser = malloc((lable_len + 3) * sizeof(char));
 
-    Loop_LT(count, 0,lable_len){
+    Loop_LT(count, 0,lable_len + 2){
         eraser[count] = ' ';
     }
 
@@ -205,8 +205,9 @@ void box_creator(Form *my_form){
 
     Loop_LT (count, 0, my_form->num_of_boxes){
         mvprintw(0,0, "Form name: %s", my_form->name);
-        mvprintw(my_form->t_boxes[count]->lable_starty, my_form->t_boxes[count]->lable_startx, "%s", my_form->t_boxes[count]->lable);
-        pre = create_newwin(my_form->t_boxes[count]->hegiht, my_form->t_boxes[count]->width, my_form->t_boxes[count]->starty, my_form->t_boxes[count]->startx);
+        mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].lable_startx, "%s", my_form->t_boxes[count].lable);
+        printw(": ");
+        pre = create_newwin(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
         wrefresh(pre);
     }
 
@@ -218,54 +219,57 @@ void box_creator(Form *my_form){
 	{	
 	    case KEY_LEFT:
 
-        if (starx - 1 < lable_len) break;
+        if (starx - 1 < lable_len + 2) break;
 		destroy_win(my_win);
-        mvprintw(stary + (height/2), starx - lable_len - 1,"%s",eraser);
+        mvprintw(stary + (height/2), starx - lable_len - 3,"%s",eraser);
 		my_win = create_newwin(height, width, stary,--starx);
-        mvprintw(stary + (height/2), starx - lable_len,"%s",lable_name);
+        mvprintw(stary + (height/2), starx - lable_len - 2,"%s",lable_name);
+        printw(": ");
 		break;
     
 	    case KEY_RIGHT:
 
         if (starx + 1 + width > COLS) break;
 		destroy_win(my_win);
-        mvprintw(stary + (height/2), starx - lable_len,"%s",eraser);
+        mvprintw(stary + (height/2), starx - lable_len - 2,"%s",eraser);
 		my_win = create_newwin(height, width, stary,++starx);
-        mvprintw(stary + (height/2), starx - lable_len,"%s",lable_name);
+        mvprintw(stary + (height/2), starx - lable_len - 2,"%s",lable_name);
+        printw(": ");
 
 		break;
 
 	    case KEY_UP:
         if (stary - 1 < 2) break;
         destroy_win(my_win);
-        mvprintw(stary + (height/2), starx - lable_len,"%s",eraser);
+        mvprintw(stary + (height/2), starx - lable_len - 2,"%s",eraser);
 		my_win = create_newwin(height, width, --stary,starx);
-        mvprintw(stary + (height/2), starx - lable_len,"%s",lable_name);
+        mvprintw(stary + (height/2), starx - lable_len - 2,"%s",lable_name);
+        printw(": ");
 		break;
 
 	    case KEY_DOWN:
-        if (stary + 1 + height > LINES) break;
+        if (stary + 1 + height > LINES - 4) break;
 		destroy_win(my_win);
-        mvprintw(stary + (height/2), starx - lable_len,"%s",eraser);
+        mvprintw(stary + (height/2), starx - lable_len - 2,"%s",eraser);
 		my_win = create_newwin(height, width, ++stary,starx);
-        mvprintw(stary + (height/2), starx - lable_len,"%s",lable_name);
+        mvprintw(stary + (height/2), starx - lable_len - 2,"%s",lable_name);
+        printw(": ");
 		break;	
 	}
     }
 
     Text_box *new_box = malloc(sizeof(Text_box));
-    new_box->lable = malloc(lable_len * sizeof(char));
 
     strcpy(new_box->lable, lable_name);
     new_box->hegiht = height;
     new_box->lable_len = lable_len;
-    new_box->lable_startx = starx - lable_len;
+    new_box->lable_startx = starx - lable_len - 2;
     new_box->lable_starty = stary + (height/2);
     new_box->startx = starx;
     new_box->starty = stary;
     new_box->width = width;
 
-    my_form->t_boxes[box_num] = new_box;
+    my_form->t_boxes[box_num] = *new_box;
     my_form->num_of_boxes++;
 
     endwin();
@@ -286,7 +290,7 @@ void box_creator(Form *my_form){
 
         t_box_menu();
         refresh();
-        int initial_input = is_valid_input(1,3);
+        int initial_input = is_valid_input(1,2);
 
         if(initial_input == 1){
             erase();
@@ -302,35 +306,19 @@ void box_creator(Form *my_form){
             raw();
             noecho();
             FILE *of;
-            of = fopen("a.txt", "w");
-            fwrite(my_form, sizeof(Form),4,of);
+
+            char ff[30];
+            strcpy(ff, my_form->name);
+
+            strcat(ff,".txt");
+
+            of = fopen(ff, "w");
+            fwrite(my_form, sizeof(Form),1,of);
             move(0,0);
             refresh();
             fclose(of);
             
             return;
-        }
-
-        elif(initial_input == 3){
-            erase();
-            endwin();
-
-            initscr();
-            move(0,0);
-            refresh();
-            printw("%s\n",my_form->name);
-            printw("%d\n" ,my_form->num_of_boxes);
-
-
-            Loop_LT (count, 0, my_form->num_of_boxes){
-                mvprintw(0,0, "Form name: %s", my_form->name);
-                mvprintw(my_form->t_boxes[count]->lable_starty, my_form->t_boxes[count]->lable_startx, "%s", my_form->t_boxes[count]->lable);
-                pre = create_newwin(my_form->t_boxes[count]->hegiht, my_form->t_boxes[count]->width, my_form->t_boxes[count]->starty, my_form->t_boxes[count]->startx);
-                wrefresh(pre);
-            }
-
-            getch();
-
         }
 
     }
@@ -339,7 +327,6 @@ void box_creator(Form *my_form){
 void form_creator(){
 
     Form *new_form = malloc(sizeof(Form));
-    new_form->t_boxes = malloc(sizeof(Text_box**));
     char *form_name = malloc(11*sizeof(char));
     int count = 0;
     char c;
@@ -401,6 +388,123 @@ void form_creator(){
 
 }
 
+void editor (Form *my_form){
+
+    initscr();
+    keypad(stdscr, TRUE);
+    noraw();
+    echo();
+    int count; 
+    WINDOW *pre;
+
+    char f[15];
+    int choice;
+    int done = 0;
+    int done_2 = 0;
+
+    Forever{
+
+        Loop_LT (count, 0, my_form->num_of_boxes){
+            mvprintw(0,0, "Form name: %s", my_form->name);
+            mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].lable_startx, "%s", my_form->t_boxes[count].lable);
+            printw(": ");
+            pre = create_newwin(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
+            if ( !strcmp(my_form->t_boxes[count].lable, f) ){
+                wborder(pre, '*','*','*','*','*','*','*','*');
+                done = 1;
+                choice = count;
+            }            
+            wrefresh(pre);
+        }        
+    
+        if (done){
+            raw();
+            noecho();
+            move(LINES - 2,0);
+
+            printw("Enter to confirm, backspace to go back\n");
+
+            Forever{
+
+                int c = getch();
+                if(c == KEY_BACKSPACE){
+                    create_newwin(my_form->t_boxes[choice].hegiht, my_form->t_boxes[choice].width, my_form->t_boxes[choice].starty, my_form->t_boxes[choice].startx);
+                    done = 0;
+                    noraw();
+                    echo();
+                    break;
+
+
+                }
+
+                elif(c == '\n'){
+                    done_2 = 1;
+                    noraw();
+                    echo();                    
+                    break;
+                }
+
+                else continue;
+
+
+            }
+        }
+
+        if(done_2) break;
+
+        move(LINES - 2, 0 );
+        printw("type the name of the lable you want\n");
+        scanw("%s" ,f);
+        move(LINES - 1, 0);
+        clrtoeol();
+        move(LINES - 1, 0);
+
+    }
+    move(LINES - 2, 0);
+    clrtoeol();
+
+    Text_box fill_box = my_form->t_boxes[choice];
+    int type_x = fill_box.startx + 1;
+    int type_y = fill_box.starty + 1;
+    int width = fill_box.width;
+
+    Forever{
+        raw();
+        echo();
+
+        mvprintw(LINES - 2,0, "fill the tbox(less than %d chars)\n" ,width - 1);
+
+
+        scanw("%s",f);
+
+        if(strlen(f) > width - 1){
+            raw();
+            noecho();
+            clrtoeol();
+            move(LINES - 1, 0);
+            printw("char lim exceeded, press anything");
+            getch();
+        }
+
+        else{
+            Loop_LT (count, 0, my_form->num_of_boxes){
+                mvprintw(0,0, "Form name: %s", my_form->name);
+                mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].lable_startx, "%s", my_form->t_boxes[count].lable);
+                printw(": ");
+                pre = create_newwin(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);   
+                wrefresh(pre);
+            }
+            
+            pre = create_newwin(my_form->t_boxes[choice].hegiht, my_form->t_boxes[choice].width, my_form->t_boxes[choice].starty, my_form->t_boxes[choice].startx);   
+
+            mvwprintw(pre, 1,1,"%s" ,f);
+            wrefresh(pre);
+        }
+
+    }
+
+}
+
 int main(){
     
     Forever{
@@ -421,36 +525,40 @@ int main(){
         }
 
         elif(initial_input == 2){
-            Form *my_form = malloc(sizeof(Form));
-            my_form->t_boxes = malloc(sizeof(Text_box***));
+            erase();
+            endwin();
+
+            initscr();
+            raw();
+            Form *my_form = (Form *)malloc(sizeof(Form));
             FILE *E;
-            int count = 0;
             WINDOW *pre;
 
+            echo();
+
             move(0,0);
-            E = fopen("a.txt","r");
-            fread(my_form, sizeof(my_form), 2,  E);
-            printw("%s\t",my_form->name);
-            printw("%d\n" ,my_form->num_of_boxes);
-            printw("%d" ,my_form->t_boxes[0]->hegiht);
-            getch();
+            printw("Enter the name of the file\n");
+            char filename[15];
+            scanw("%s" ,filename);
+            erase();
+            refresh();
+            E = fopen(filename,"r");
 
-            // Loop_LT (count, 0, my_form->num_of_boxes){
-                //     mvprintw(0,0, "Form name: %s", my_form->name);
-                //     mvprintw(my_form->t_boxes[count]->lable_starty, my_form->t_boxes[count]->lable_startx, "%s", my_form->t_boxes[count]->lable);
-                //     pre = create_newwin(my_form->t_boxes[count]->hegiht, my_form->t_boxes[count]->width, my_form->t_boxes[count]->starty, my_form->t_boxes[count]->startx);
-                //     wrefresh(pre);
-            // }
+            if (E == NULL){
+                mvprintw(0,0, "sth went wrong, press sth\n");
+                getch();
+                continue;
 
-            // while(fread(my_form, sizeof(Form),1,E)){
-            //     mvprintw(0,0, "Form name: %s", my_form->name);
-            //     mvprintw(my_form->t_boxes[count]->lable_starty, my_form->t_boxes[count]->lable_startx, "%s", my_form->t_boxes[count]->lable);
-            //     pre = create_newwin(my_form->t_boxes[count]->hegiht, my_form->t_boxes[count]->width, my_form->t_boxes[count]->starty, my_form->t_boxes[count]->startx);
-            //     wrefresh(pre);
-            //     count++;
-            // }
+            }            
+
+            fread(my_form, sizeof(Form), 1,  E);
 
             fclose(E);
+            erase();
+            refresh();
+            endwin();
+
+            editor(my_form);
             
         }
 

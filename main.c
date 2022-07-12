@@ -1,13 +1,19 @@
 #include "project.h"
 
 typedef struct text_box{
+    
     char lable[11];
     int lable_len;
+
     int hegiht;
     int width;
+
+    //startx and starty show top left side of the text box.
     int startx;
-    int lable_startx;
     int starty;
+
+    //lable_startx and lable_starty show the starting position of the lable
+    int lable_startx;
     int lable_starty;
 
 } Text_box;
@@ -19,8 +25,8 @@ typedef struct form{
     int forms_filled;
     char answers[10][50];
 
-    int is_fillable;
-    int is_editable;
+    int is_fillable; // If a form is fillable, it is a format rather than a filled form.
+    int is_editable; // If a form is editable, it is a filled form rather than a format.
 
 } Form;
 
@@ -29,7 +35,7 @@ int is_valid_input(int start, int end){
     char my_input;
     int x,y;
 
-    printw("please choose an option\n");
+    printw("Please choose an option\n");
     getyx(stdscr, y,x);
 
     my_input = getch() - '0';
@@ -45,15 +51,19 @@ int is_valid_input(int start, int end){
 }
 
 void starting_menu(){
+    
+    //Menu shown at the start of the program
     move(LINES - 7, 0);
     printw("1- Create a new form format\n");
-    printw("2- Change a form\n");
+    printw("2- Delete a box from a form format\n");
     printw("3- Use a form\n");
     printw("0- exit\n");
     printw("\n");
 }
 
 void using_menu(){
+
+    //Menu shown when the user chooses to use a form format, for procedures like filling a form or editing one. 
     move(LINES - 8, 0);
     printw("1- Fill a form\n");
     printw("2- Find a specific element in an filled form\n");
@@ -64,6 +74,7 @@ void using_menu(){
 }
 
 void t_box_menu(){
+    //Menu shown during creation of the text boxes.
     move(LINES - 5, 0);
 
     printw("1- Create another text box\n");
@@ -73,30 +84,36 @@ void t_box_menu(){
 
 void save_menu_list(){
 
-    move(LINES - 3, 0);
+    //Menu shown during filling or editing a form.
+    move(LINES - 4, 0);
     printw("1- fill another text box\n");
     printw("2- Save the filled box\n");
     printw("\n");
 }
 
-WINDOW *create_newwin(int height, int width, int starty, int startx){	
-    WINDOW *local_win;
-    local_win = newwin(height, width, starty, startx);
-    box(local_win, 0 , 0);
+WINDOW *make_window(int height, int width, int starty, int startx){
 
-    wrefresh(local_win);
-    return local_win;
+    WINDOW *window;
+    
+    window = newwin(height, width, starty, startx);
+    box(window, 0 , 0);
+    wborder(window, ' ', ' ', '*', '*','*','*','*','*');
+
+    wrefresh(window);
+    return window;
 }
 
-void destroy_win(WINDOW *local_win){
+void delete_window(WINDOW *window){
 
-    wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+    wborder(window, ' ', ' ', ' ',' ',' ',' ',' ',' ');
    
-    wrefresh(local_win);
-    delwin(local_win);
+    wrefresh(window);
+    delwin(window);
 }
 
 void box_creator(Form *my_form){
+
+    //Box creator creates text boxes and puts them in the form it received.
 
     int box_num = my_form->num_of_boxes;
     char *lable_name = malloc (11 * sizeof(char));
@@ -181,7 +198,7 @@ void box_creator(Form *my_form){
 
     move(LINES - 4,0);
 
-    printw("please enter the width(greater than 4 and smaller than 45) of the text box: %s\n" ,lable_name);
+    printw("Please enter the width(greater than 6 and smaller than 45) of the text box: %s (For n character maximum, the width should be n + 2) \n" ,lable_name);
     refresh();
 
     int height = 3;
@@ -190,10 +207,10 @@ void box_creator(Form *my_form){
     printw("w: "); 
     scanw("%d" ,&width);
 
-    while (width < 4 || width > 45 ){
+    while (width < 6 || width > 45 ){
 
         mvprintw(LINES - 4, 0, "Invalid width number\n");
-        printw("please enter the width(greater than 4 and smaller than 45) of the text box: %s\n" ,lable_name);
+        printw("Please enter the width(greater than 6 and smaller than 45) of the text box: %s (For n character maximum, the width should be n + 2) \n" ,lable_name);
         printw("w: ");
         scanw("%d" ,&width);
     }
@@ -210,7 +227,7 @@ void box_creator(Form *my_form){
     keypad(stdscr, TRUE);
     refresh();
 
-    char *eraser = malloc((lable_len + 3) * sizeof(char));
+    char *eraser = malloc((lable_len + 3) * sizeof(char)); //eraser is used to delete what was written on the screen. Here we use it to delete the name of the text box when we move it.
 
     Loop_LT(count, 0,lable_len + 2){
         eraser[count] = ' ';
@@ -218,39 +235,36 @@ void box_creator(Form *my_form){
 
     eraser[count] = 0;
 
-    WINDOW *pre;
-    WINDOW *my_win = create_newwin(height, width, stary, starx);
+    WINDOW *used_window;
+    WINDOW *my_win = make_window(height, width, stary, starx);
     wrefresh(my_win);
-
 
     noecho();
     raw();
-
-
 
     mvprintw(0,0, "Press F2 to save");
 
     Loop_LT (count, 0, my_form->num_of_boxes){
 
-
-        mvprintw(0,0, "Form name: %s", my_form->name);
         mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].lable_startx, "%s", my_form->t_boxes[count].lable);
         printw(": ");
-        pre = create_newwin(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
-        wrefresh(pre);
+        used_window = make_window(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
+        wrefresh(used_window);
 
     }    
 
     while((ch = getch()) != KEY_F(2)){
 
+        //Everytime the user presses one of the arrow keys, the position of the box changes and the user can save it by pressing F2. We move the box by creating 
+        //A window, deleting the old window, deleting the old lable and printing the new lable.
         switch(ch){
                 
             case KEY_LEFT:
     
                 if (starx - 1 < lable_len + 2) break;
-                destroy_win(my_win);
+                delete_window(my_win);
                 mvprintw(stary + (height/2), starx - lable_len - 3,"%s",eraser);
-                my_win = create_newwin(height, width, stary,--starx);
+                my_win = make_window(height, width, stary,--starx);
                 mvprintw(stary + (height/2), starx - lable_len - 2,"%s",lable_name);
                 printw(": ");
                
@@ -259,9 +273,9 @@ void box_creator(Form *my_form){
             case KEY_RIGHT:
 
                 if (starx + 1 + width > COLS) break;
-                destroy_win(my_win);
+                delete_window(my_win);
                 mvprintw(stary + (height/2), starx - lable_len - 2,"%s",eraser);
-                my_win = create_newwin(height, width, stary,++starx);
+                my_win = make_window(height, width, stary,++starx);
                 mvprintw(stary + (height/2), starx - lable_len - 2,"%s",lable_name);
                 printw(": ");
 
@@ -270,9 +284,9 @@ void box_creator(Form *my_form){
             case KEY_UP:
 
                 if (stary - 1 < 2) break;
-                destroy_win(my_win);
+                delete_window(my_win);
                 mvprintw(stary + (height/2), starx - lable_len - 2,"%s",eraser);
-                my_win = create_newwin(height, width, --stary,starx);
+                my_win = make_window(height, width, --stary,starx);
                 mvprintw(stary + (height/2), starx - lable_len - 2,"%s",lable_name);
                 printw(": ");
             
@@ -281,9 +295,9 @@ void box_creator(Form *my_form){
             case KEY_DOWN:
 
                 if (stary + 1 + height > LINES - 4) break;
-                destroy_win(my_win);
+                delete_window(my_win);
                 mvprintw(stary + (height/2), starx - lable_len - 2,"%s",eraser);
-                my_win = create_newwin(height, width, ++stary,starx);
+                my_win = make_window(height, width, ++stary,starx);
                 mvprintw(stary + (height/2), starx - lable_len - 2,"%s",lable_name);
                 printw(": ");
                 
@@ -327,10 +341,12 @@ void box_creator(Form *my_form){
 
         if(initial_input == 1){
 
-            if (my_form->num_of_boxes == 10){
+            if (my_form->num_of_boxes >= 10){
                 erase();
                 refresh();
                 mvprintw(0,0, "Number of Text Boxes is at max");
+                getch();
+                continue;
             }
 
             erase();
@@ -340,16 +356,16 @@ void box_creator(Form *my_form){
 
         elif (initial_input == 2){
 
-            FILE *of;
+            FILE *New_Form;
 
-            char ff[30];
-            strcpy(ff, my_form->name);
+            char form_name[30];
+            strcpy(form_name, my_form->name);
 
-            strcat(ff,".txt");
+            strcat(form_name,".txt");
 
-            of = fopen(ff, "w");
-            fwrite(my_form, sizeof(Form),1,of);
-            fclose(of);
+            New_Form = fopen(form_name, "w");
+            fwrite(my_form, sizeof(Form),1,New_Form);
+            fclose(New_Form);
             
             return;
         }
@@ -358,6 +374,8 @@ void box_creator(Form *my_form){
 }
 
 void form_creator(){
+
+    //Form creator makes a new blank form and passes it to box_creator.
 
     Form *new_form = malloc(sizeof(Form));
     char *form_name = malloc(11*sizeof(char));
@@ -423,19 +441,24 @@ void form_creator(){
 
 void editor (Form *my_form, int mode){
 
+    //Editor is the core of our program. It works in 3 modes: EDIT, FILL, and FIND. EDIT is for deleting boxes from a format, FILL is for filling a form or editing an already filled form,
+    //and FIND is for finding forms that have the same values we want.
+
     initscr();
     refresh();
     keypad(stdscr, TRUE);
     noraw();
     echo();
     int count; 
-    WINDOW *pre;
+    WINDOW *used_window;
 
     char *form_num = malloc((strlen(my_form->name) + 5) * sizeof(char));
     strcpy(form_num, my_form->name);
     form_num[strlen(my_form->name)] = '#';
     form_num[strlen(my_form->name) + 1] = my_form->forms_filled + '0';
     strcat(form_num, ".txt");
+
+    //We create the name of a file form by attaching #i.txt to it. i is the number of the form, determined by how many forms with the same format were filled before. 
     
     char f[15];
     int choice;
@@ -445,18 +468,22 @@ void editor (Form *my_form, int mode){
     Forever{
 
         Loop_LT (count, 0, my_form->num_of_boxes){
+
             mvprintw(0,0, "Form name: %s", my_form->name);
             mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].lable_startx, "%s", my_form->t_boxes[count].lable);
             printw(": ");
-            pre = create_newwin(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
+
+            used_window = make_window(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
+            
+            //If the given name by the user matches a text box's lable, its borders change.
             if ( !strcmp(my_form->t_boxes[count].lable, f) ){
-                wborder(pre, '*','*','*','*','*','*','*','*');
+                wborder(used_window, ' ',' ','#','#','#','#','#','#');
                 done = 1;
                 choice = count;
             }
 
-            mvwprintw(pre, 1,1, "%s" ,my_form->answers[count]);
-            wrefresh(pre);
+            mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].startx + 1 , "%s" ,my_form->answers[count]);
+            wrefresh(used_window);
         }        
     
         if (done){
@@ -470,12 +497,11 @@ void editor (Form *my_form, int mode){
 
                 int c = getch();
                 if(c == KEY_BACKSPACE){
-                    create_newwin(my_form->t_boxes[choice].hegiht, my_form->t_boxes[choice].width, my_form->t_boxes[choice].starty, my_form->t_boxes[choice].startx);
+                    make_window(my_form->t_boxes[choice].hegiht, my_form->t_boxes[choice].width, my_form->t_boxes[choice].starty, my_form->t_boxes[choice].startx);
                     done = 0;
                     noraw();
                     echo();
                     break;
-
 
                 }
 
@@ -521,6 +547,7 @@ void editor (Form *my_form, int mode){
             my_form->num_of_boxes--;
 
             char changed_format[30];
+            
             strcpy(changed_format, my_form->name);
             strcat(changed_format, ".txt");
 
@@ -543,7 +570,7 @@ void editor (Form *my_form, int mode){
 
     int width = my_form->t_boxes[choice].width;
 
-    char *answer = malloc((my_form->t_boxes[choice].width - 1) * sizeof(char));
+    char answer[50] = {0};
 
     Forever{
         raw();
@@ -557,9 +584,10 @@ void editor (Form *my_form, int mode){
         if (strlen(answer) == 0 && mode != FIND){
             mvprintw(LINES - 2,0, "The input cannot be empty, please give a new answer. press a key to continue\n");
             getch();
+            continue;
         }
 
-        if(strlen(f) > width - 2){
+        if(strlen(answer) > width - 2){
 
             raw();
             noecho();
@@ -567,18 +595,31 @@ void editor (Form *my_form, int mode){
             move(LINES - 1, 0);
             printw("char lim exceeded, press anything");
             getch();
+            move(LINES - 1, 0);
+            clrtoeol();
+            refresh();
+
+            answer[0] = '\0';
+
             continue;
         }
 
         else{
+
             strcpy(my_form->answers[choice], answer);
+            //We add the answer in the 2D array answers in my form and its index is the same as the index of the box.
+            //Side note: my first idea was to save all the answers in a text box and the answer for text box[n] would be in (n)th line.
+            //I ended up creating a text file that was about 10 gigabytes which filled my Linux's allocated storage completely and crashed my PC :). So I used an array instead.
+
             Loop_LT (count, 0, my_form->num_of_boxes){
+                
                 mvprintw(0,0, "Form name: %s", my_form->name);
                 mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].lable_startx, "%s", my_form->t_boxes[count].lable);
                 printw(": ");
-                pre = create_newwin(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
-                mvwprintw(pre, 1,1, "%s" ,my_form->answers[count]);
-                wrefresh(pre);
+                
+                used_window = make_window(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
+                mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].startx + 1 , "%s" ,my_form->answers[count]);
+                wrefresh(used_window);
             }
 
             move(LINES - 1, 0);
@@ -599,12 +640,13 @@ void editor (Form *my_form, int mode){
         mvprintw(0,0, "Form name: %s", my_form->name);
         mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].lable_startx, "%s", my_form->t_boxes[count].lable);
         printw(": ");
-        pre = create_newwin(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
-        mvwprintw(pre, 1,1, "%s" ,my_form->answers[count]);
-        wrefresh(pre);
+        used_window = make_window(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
+        mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].startx + 1 , "%s" ,my_form->answers[count]);
+        wrefresh(used_window);
     }
 
     if (mode == FIND){
+        //After we have filled our form, there is no need to to save it to a file in FIND mode, so the function ends here.
         return;
     }
 
@@ -645,22 +687,23 @@ void editor (Form *my_form, int mode){
 void print_form(Form *my_form){
 
     int count;
-    WINDOW *pre;
+    WINDOW *used_window;
     Loop_LT (count, 0, my_form->num_of_boxes){
         
 
         mvprintw(0,0, "Form name: %s", my_form->name);
         mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].lable_startx, "%s", my_form->t_boxes[count].lable);
         printw(": ");
-        pre = create_newwin(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
-        mvwprintw(pre, 1,1, "%s" ,my_form->answers[count]);
-        wrefresh(pre);
+        used_window = make_window(my_form->t_boxes[count].hegiht, my_form->t_boxes[count].width, my_form->t_boxes[count].starty, my_form->t_boxes[count].startx);
+        mvprintw(my_form->t_boxes[count].lable_starty, my_form->t_boxes[count].startx + 1 , "%s" ,my_form->answers[count]);
+        wrefresh(used_window);
     }
 }
 
 void use(){
 
     Forever{
+
 
         initscr();
         erase();
@@ -674,7 +717,7 @@ void use(){
         refresh();
         int initial_input = is_valid_input(0, 4);
 
-        if (initial_input == 1){
+        if (initial_input == 1){ //Filling a form.
 
             erase();
             endwin();
@@ -696,7 +739,7 @@ void use(){
             E = fopen(filename,"r");
 
             if (E == NULL){
-                mvprintw(0,0, "sth went wrong, press sth\n");
+                mvprintw(0,0, "there was a problem opening the file, press anything to abort the operation\n");
                 getch();
                 return;
 
@@ -717,6 +760,7 @@ void use(){
             fclose(E);
 
             E = fopen(filename, "w");
+            //We have to save our form again because the number of filled forms in that format has changed.
             
             my_form->forms_filled++;
             fwrite(my_form, sizeof(Form), 1, E);
@@ -731,7 +775,7 @@ void use(){
 
         }
 
-        elif(initial_input == 2){
+        elif(initial_input == 2){// finding elements
 
             erase();
             endwin();
@@ -754,7 +798,7 @@ void use(){
 
             if (E == NULL){
 
-                mvprintw(0,0, "sth went wrong, press sth\n");
+                mvprintw(0,0, "there was a problem opening the file, press anything to abort the operation\n");
                 getch();
                 return;
 
@@ -797,7 +841,9 @@ void use(){
                 elif(initial_input == 2){
                     break;
                 }
-            }
+            }   
+
+
 
             int count;
 
@@ -806,7 +852,9 @@ void use(){
             move(0,0);
 
             Loop_LTE(count, 1, my_form->forms_filled){
-            
+                
+                //After entring the boxes we want to search for, we go through all the forms that were created with the same format.
+
                 char serach_file[30];
                 strcpy(serach_file, my_form->name);
                 strcat(serach_file, "#");
@@ -871,7 +919,7 @@ void use(){
 
         }
 
-        elif (initial_input == 3){
+        elif (initial_input == 3){//Editing a filled form
 
             erase();
             endwin();
@@ -893,7 +941,7 @@ void use(){
             E = fopen(filename,"r");
 
             if (E == NULL){
-                mvprintw(0,0, "sth went wrong, press sth\n");
+                mvprintw(0,0, "there was a problem opening the file, press anything to abort the operation\n");
                 getch();
                 return;
 
@@ -924,7 +972,7 @@ void use(){
         }
         
 
-        elif (initial_input == 4){
+        elif (initial_input == 4){//Deleting a filled form
 
             erase();
             endwin();
@@ -946,7 +994,7 @@ void use(){
             E = fopen(filename,"r");
 
             if (E == NULL){
-                mvprintw(0,0, "sth went wrong, press sth\n");
+                mvprintw(0,0, "there was a problem opening the file, press anything to abort the operation\n");
                 getch();
                 return;
 
@@ -1003,12 +1051,12 @@ int main(){
         refresh();
         int initial_input = is_valid_input(0, 3);
 
-        if(initial_input == 1){
+        if(initial_input == 1){//Create a form
             endwin();
             form_creator();
         }
 
-        elif(initial_input == 2){
+        elif(initial_input == 2){//Delete a text bos from a form
 
             erase();
             endwin();
@@ -1031,7 +1079,7 @@ int main(){
 
             if (E == NULL){
 
-                mvprintw(0,0, "sth went wrong, press sth\n");
+                mvprintw(0,0, "there was a problem opening the file, press anything to abort the operation\n");
                 getch();
                 endwin();
 
@@ -1056,7 +1104,7 @@ int main(){
             }
         }
 
-        elif(initial_input == 3){
+        elif(initial_input == 3){// Use form formats
             erase();
             endwin();
 
@@ -1064,13 +1112,13 @@ int main(){
             
         }
 
-        elif (initial_input == 0){
+        elif (initial_input == 0){//Exit
 
             erase();
             move(0,0);
-            printw("\nI hate linux\n");
+            printw("\nExiting...\n");
             refresh();
-            //sleep(3);
+            sleep(3);
             endwin();
             return 0;
         }
